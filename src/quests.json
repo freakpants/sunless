@@ -1,0 +1,60 @@
+{
+    "Station III": [
+        {
+            "good": "105976",
+            "amount": "1"
+        }
+    ],
+    "Chapel of Lights": [
+        {
+            "good": "109062",
+            "amount": "2"
+        }
+    ],
+    "Fallen London": [
+        {
+            "good": "110583",
+            "amount": "7"
+        },
+        {
+            "good": "114085",
+            "amount": "7"
+        },
+        {
+            "good": "107719",
+            "amount": "7"
+        }
+    ],
+    "Codex": [
+        {
+            "good": "111726",
+            "amount": "1"
+        }
+    ],
+    "Mount Palmerston": [
+        {
+            "good": "102019",
+            "amount": "5"
+        },
+        {
+            "good": "102016",
+            "amount": "1"
+        }
+    ],
+    "Godfall": [
+        {
+            "good": "110233",
+            "amount": "5"
+        },
+        {
+            "good": "102020",
+            "amount": "5"
+        }
+    ],
+    "Polythreme": [
+        {
+            "good": "109417",
+            "amount": "x"
+        }
+    ]
+}
