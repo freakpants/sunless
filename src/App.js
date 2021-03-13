@@ -147,7 +147,18 @@ const styles = theme => ({
 	links:{
 		color: "black",
 		textDecoration: "none"
-	}	
+	},
+	questcontainer:{
+		width: "100%",
+		display: "inline-block",
+		margin: "0 1rem 1rem 0"
+	},
+	masonry:{
+		columns: "4",
+		display: "block",
+		columnGap: "1 rem",	
+		rowGap: "1 rem"
+	},
 });
 
 
@@ -225,13 +236,12 @@ class App extends React.Component <State> {
 					</Button>
 				</Paper>
 			</Grid>
-			<Grid item xs={2}>
-				<Grid container spacing={3}>
+			<Grid item xs={8}>
+				<div className={classes.masonry}>
 				{ports.map(port => {
 				if (this.state.quests[port.name]){
 					return(
-					<Grid item xs={12}>
-					<Paper>
+					<Paper className={classes.questcontainer}>
 					<Accordion >
 						<AccordionSummary>	
 							<div className={classes.porticoncontainer}>
@@ -260,17 +270,16 @@ class App extends React.Component <State> {
 						</AccordionDetails>
 					</Accordion>
 					</Paper>
-					</Grid>
 					)
 				}
 				})}
-				</Grid>
+				</div>
 			</Grid>
-			<Grid item xs={10}>
-				<Grid container spacing={3}>
+			<Grid item xs={4}>
+				<Grid container>
 					{ports.map(port => {
 						return(
-						<Grid onClick={() => this.handlePortSelect(port.name) }  item xs={1}>
+						<Grid onClick={() => this.handlePortSelect(port.name) }  item xs={2}>
 							<div></div>	
 							{ port.icon && images[port.icon + "small"] &&
 								<img src={images[port.icon + "small"].default} />
@@ -283,6 +292,7 @@ class App extends React.Component <State> {
 			</Grid>
 		</Grid>
 		</div>
+
 		</ThemeProvider>
 		);
 	}

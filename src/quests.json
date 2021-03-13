@@ -29,6 +29,10 @@
         {
             "good": "111726",
             "amount": "1"
+        },
+        {
+            "good": "108656",
+            "amount": "x"
         }
     ],
     "Mount Palmerston": [
@@ -55,6 +59,80 @@
         {
             "good": "109417",
             "amount": "x"
+        }
+    ],
+    "Khan's Glory": [
+        {
+            "good": "102018",
+            "amount": "5"
+        }
+    ],
+    "Naples": [
+        {
+            "good": "102018",
+            "amount": "1"
+        }
+    ],
+    "Khan's Shadow": [
+        {
+            "good": "114995",
+            "amount": "1"
+        }
+    ],
+    "The Chelonate": [
+        {
+            "good": "109714",
+            "amount": "1"
+        },
+        {
+            "good": "102023",
+            "amount": "1"
+        }
+    ],
+    "Nuncio": [
+        {
+            "good": "113263",
+            "amount": "1"
+        },
+        {
+            "good": "110233",
+            "amount": "5"
+        }
+    ],
+    "Khan's Heart": [
+        {
+            "good": "102017",
+            "amount": "1"
+        }
+    ],
+    "The Uttershroom": [
+        {
+            "good": "108654",
+            "amount": "x"
+        }
+    ],
+    "Iron Republic": [
+        {
+            "good": "102032",
+            "amount": "1"
+        },
+        {
+            "good": "105969",
+            "amount": "12"
+        },
+        {
+            "good": "105973",
+            "amount": "7"
+        },
+        {
+            "good": "108657",
+            "amount": "1"
+        }
+    ],
+    "Irem": [
+        {
+            "good": "102018",
+            "amount": "1"
         }
     ]
 }
