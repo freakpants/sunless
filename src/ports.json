@@ -56,6 +56,15 @@
 	{"name": "Port Carnelian", "icon": "portcarnelian_port" },
 	{"name": "Adam's Way", "icon": "adamscape_port" },
 	{"name": "Varchas", "icon": "varchas_port" },
-	{"name": "Kingeater's Castle", "icon": "kingeaterscastle_port" }
-	]
+	{"name": "Kingeater's Castle", "icon": "kingeaterscastle_port" },
+	{"name": "Bandaged Poissonier", "icon": "bandagedpoissonier" },
+	{"name": "Tireless Mechanic", "icon": "sleeplessmechanic" },
+	{"name": "Presbyterate Adventuress", "icon": "presbyterateadventuress" },
+	{"name": "Cladery Heir", "icon": "claderyheir"},
+	{"name": "Genial Magician", "icon": "genialmagician"},
+	{"name": "Maybes Daughter", "icon": "maybesdaughter"},
+	{"name": "Nacreous Outcast", "icon": "nacreousoutcast"},
+	{"name": "Merciless Modiste", "icon": "mercilessmodiste"},
+	{"name": "Fallen London - Venturer", "icon": "merchantventurer"}
+]
 }

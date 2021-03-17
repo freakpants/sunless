@@ -44,6 +44,24 @@ qualities.forEach( quality => {
 });
 _.sortBy(option_curiosities, 'Name');
 
+const option_stories = [];
+qualities.forEach( quality => {
+	if(quality.Category === "Story"){
+		goods[quality.Id] = quality;
+		option_stories.push(quality);
+	}
+});
+_.sortBy(option_stories, 'Name');
+
+const option_circumstances = [];
+qualities.forEach( quality => {
+	if(quality.Category === "Circumstance"){
+		goods[quality.Id] = quality;
+		option_circumstances.push(quality);
+	}
+});
+_.sortBy(option_circumstances, 'Name');
+
 let  ports = json_ports.ports;
 ports = _.sortBy(ports, 'name');
 
@@ -230,6 +248,16 @@ class App extends React.Component <State> {
 							return <option key={index} value={good.Id}>{good.Name}</option>
 						})}
 					</select>
+					<select onChange={(e) => this.handleGoodChange(e)} >
+						{option_stories.map((good, index) =>{
+							return <option key={index} value={good.Id}>{good.Name}</option>
+						})}
+					</select>
+					<select onChange={(e) => this.handleGoodChange(e)} >
+						{option_circumstances.map((good, index) =>{
+							return <option key={index} value={good.Id}>{good.Name}</option>
+						})}
+					</select>
 					<TextField id="amount" label="Amount" onChange={(e) => this.handleAmountChange(e)} value={this.state.value} />
 					<Button onClick={() => this.handleQuestAdd() } variant="contained" color="primary">
 						Add Quest
@@ -239,10 +267,10 @@ class App extends React.Component <State> {
 			<Grid item xs={8}>
 				<div className={classes.masonry}>
 				{ports.map(port => {
-				if (this.state.quests[port.name]){
+				if (this.state.quests[port.name] && this.state.quests[port.name].length > 0){
 					return(
 					<Paper className={classes.questcontainer}>
-					<Accordion >
+					<Accordion defaultExpanded={true} >
 						<AccordionSummary>	
 							<div className={classes.porticoncontainer}>
 								{ port.icon && images[port.icon + "small"] &&
@@ -260,7 +288,7 @@ class App extends React.Component <State> {
 									return (
 									<div className={classes.questrow}>
 										<div className={classes.goodicon} ><img src={images[good.Image + "small"].default} /></div>
-										<div className={classes.goodname}><a className={classes.links} href={"https://sunlesssea.gamepedia.com/" + good.Name}>{ quest.amount} {good.Name}</a></div>
+										<div className={classes.goodname}><a target="_blank" className={classes.links} href={"https://sunlesssea.gamepedia.com/" + good.Name}>{ quest.amount} {good.Name}</a></div>
 										<div className={classes.deleteicon}><DeleteForeverIcon onClick={() => this.handleQuestRemove(port.name, index)} /></div>
 									</div>
 									)
