@@ -131,7 +131,11 @@ eventsjson.forEach( single_event => {
 		const limitedto = single_event.LimitedToArea.Id;
 		single_event.ChildBranches.forEach(branch => {
 			if(branch.Name.includes("Port Report")){
-				port_report_qualities[limitedto] = branch.DefaultEvent.QualitiesAffected[0].AssociatedQualityId;
+				if(branch.SuccessEvent !== null){
+					port_report_qualities[limitedto] = branch.SuccessEvent.QualitiesAffected[0].AssociatedQualityId;
+				} else {
+					port_report_qualities[limitedto] = branch.DefaultEvent.QualitiesAffected[0].AssociatedQualityId;
+				}
 				console.log(branch);
 			}
 			
@@ -148,7 +152,7 @@ eventsjson.forEach( single_event => {
 						} else {
 							if(debug_events) console.log("first required quality not possessed");
 							if(debug_events) console.log(quality);
-							if(debug_events)  console.log(level);
+							if(debug_events) console.log(level);
 						}
 					} else {
 						requirements_met = checkIfQualityFulfilled(quality, level) && requirements_met;
@@ -349,7 +353,7 @@ const styles = theme => ({
 	questcontainer:{
 		width: "100%",
 		display: "inline-block",
-		margin: "0 1rem 1rem 0",
+		margin: "0 0 0 0",
 		"& .Mui-expanded.MuiAccordion-root":{
 			zIndex: 1
 		}
@@ -578,6 +582,14 @@ class App extends React.Component <State> {
 							case "DemeauxIsland":
 								data.Name = "Iron & Misery Co. Funging Station";
 								data.Icon = "demeauxisland_port";
+							break;
+							case "Dahut Port":
+								data.Name = "Dahut";
+								data.Icon = "dahut";
+							break;
+							case "ZeelPort":
+								data.Name = "The Salt Lions";
+								data.Icon = "saltlions_port";
 							break;
 							// case "":
 								// data.Name = "";
