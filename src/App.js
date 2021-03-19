@@ -74,6 +74,7 @@ savedata.QualitiesPossessedList.map(qualityPossessed => {
 });
 
 const events = [];
+const interactions = [];
 eventsjson.forEach( single_event => {
 	events[single_event.Id] = single_event;
 	const required = single_event.QualitiesRequired;
@@ -94,49 +95,65 @@ eventsjson.forEach( single_event => {
 		// events that only happen on your ship
 		// console.log(single_event);
 	}
-	if(single_event.LimitedToArea !== null){
-		if(single_event.LimitedToArea.Id === 107690){
-			console.log(single_event);
-			single_event.ChildBranches.forEach(branch => {
-				// check if the qualities required are met
-				branch.QualitiesRequired.forEach(quality => {
-					const level = qualitiesPossessedList[quality.AssociatedQualityId];
-					let minLevel = false;
-					let maxLevel = false;
-					if(quality.MinLevel === null || quality.MinLevel <= level){
-						minLevel = true;
-					}
-					if(quality.MaxLevel === null || quality.MaxLevel >= level){
-						maxLevel = true;
-					}
-					const requirements_met = minLevel && maxLevel && (minLevel !== null || maxLevel !== null);
-					if(requirements_met){
-						console.log(branch.Name);
-					}
-				});
-			});
+
+	let requirements_met = "";
+	single_event.QualitiesRequired.forEach(quality => {
+		if(requirements_met === ""){
+			requirements_met = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId]);
+		} else {
+			requirements_met = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId]) && requirements_met;
 		}
+	});
+	if(!requirements_met){
+		return;
+	}
+	if(single_event.LimitedToArea !== null){
+		const limitedto = single_event.LimitedToArea.Id;
+		single_event.ChildBranches.forEach(branch => {
+			// check if the qualities required are met
+			let requirements_met = "";
+			branch.QualitiesRequired.forEach(quality => {
+				const level = qualitiesPossessedList[quality.AssociatedQualityId];
+				if(requirements_met === ""){
+					requirements_met = checkIfQualityFulfilled(quality, level);
+				} else {
+					requirements_met = checkIfQualityFulfilled(quality, level) && requirements_met;
+				}
+			});
+			if(requirements_met){
+				if(interactions[limitedto] === undefined){
+					interactions[limitedto] = [branch];
+				} else {
+					interactions[limitedto].push(branch);
+				}
+			}
+		});
 	}
 });
 
-goods.forEach( good => {
-	if(good.Image === "papers5"){
-		// console.log(good);
+console.log(interactions);
+
+function checkIfQualityFulfilled(quality, level){
+	if(level === undefined){
+		return false;
 	}
-});
+	let minLevel = false;
+	let maxLevel = false;
+	if(quality.MinLevel === null || quality.MinLevel <= level){
+		minLevel = true;
+	}
+	if(quality.MaxLevel === null || quality.MaxLevel >= level){
+		maxLevel = true;
+	}
+	let requirements_met = minLevel && maxLevel && (minLevel !== null || maxLevel !== null);
+	if(quality.VisibleWhenRequirementFailed){
+		requirements_met = !requirements_met;
+	}
+	return requirements_met;
+}
 
-// JSON.stringify(
- // console.log(events[245099]); // what can we do to the letter itself, and its results
-// console.log(goods[127591]); // Story
-// console.log(goods[127517]); // Story
-console.log(goods[127586]); // Progress => Level 1 (letter opened or not)
-// console.log(goods[108545]); // increasing fragments
-// what is 166852?
-
-/* Prisoner */
-// console.log(events[151261]); // questicleStep, gold (called Story on wiki)
-/* port report wisdom */
-// console.log(goods[116124]);	// quality: do we have one?
+// console.log(goods[126174]);
+// console.log(qualitiesPossessedList[128593]);
 
 
 
@@ -258,11 +275,17 @@ const styles = theme => ({
 		width: 40,
 		height: 52,
 	},
+	list:{
+		paddingInlineStart: "unset",
+	},
 	questrow:{
 		width: "100%",
 		display: "flex",
 		flexDirection: "row",
-		marginBottom: 1
+		marginBottom: 1,
+		textAlign: "left",
+		paddingBottom: 10,
+		borderBottom: "1px solid black"
 	},
 	deleteicon:{
 		display: "flex",
@@ -297,6 +320,10 @@ const styles = theme => ({
 	infoIcons: {
 		display: "flex",
 		paddingTop: 2
+	},
+	questcounter:{
+		fontWeight: "bold",
+		color: "red"
 	}
 });
 
@@ -650,7 +677,10 @@ class App extends React.Component <State> {
 																<img className={classes.porticon} src={images[data.Icon + "small"].default} />
 																}
 															</div>
-															<div className={classes.portname}>{data.Area.Id}{ data.Name }</div>
+															<div className={classes.portname}>{interactions[data.Area.Id] && 
+																<div className={classes.questcounter}>{interactions[data.Area.Id].length} Quests - </div>
+															}{ data.Name }  
+															</div>
 															<div className={classes.infoIcons}>
 																{ data.exchange && data.exchange.fuel &&
 																	<div>																	<img className={classes.ressources} src={images["fuelsmall"].default} /><div className={classes.infoPrice}>{
@@ -672,19 +702,17 @@ class App extends React.Component <State> {
 														</AccordionSummary>
 														<AccordionDetails>
 															<Grid container>
-															{ this.state.quests[data.Name] && 
-																this.state.quests[data.Name].map((quest, index) =>{
-																	const good = goods[parseInt(quest.good)];
-																	
+																<ul className={classes.list} >
+															{ interactions[data.Area.Id] && 
+																 interactions[data.Area.Id].map((quest) =>{
 																	return (
-																	<div className={classes.questrow}>
-																		<div className={classes.goodicon} ><img src={images[good.Image + "small"].default} /></div>
-																		<div className={classes.goodname}><a target="_blank" className={classes.links} href={"https://sunlesssea.gamepedia.com/" + good.Name}>{ quest.amount} {good.Name}</a></div>
-																		<div className={classes.deleteicon}><DeleteForeverIcon onClick={() => this.handleQuestRemove(data.Name, index)} /></div>
-																	</div>
+																	<li className={classes.questrow}>
+																	{ quest.Name }
+																	</li>
 																	)
 																})
 															}
+																</ul>
 															</Grid>
 														</AccordionDetails>
 													</Accordion>
