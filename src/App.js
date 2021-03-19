@@ -76,8 +76,10 @@ savedata.QualitiesPossessedList.map(qualityPossessed => {
 const events = [];
 const interactions = [];
 
+const port_report_qualities = [];
 
 
+const debug_events = false;
 eventsjson.forEach( single_event => {
 	if(single_event.Id === 121902){
 		console.log(single_event);
@@ -128,6 +130,11 @@ eventsjson.forEach( single_event => {
 		
 		const limitedto = single_event.LimitedToArea.Id;
 		single_event.ChildBranches.forEach(branch => {
+			if(branch.Name.includes("Port Report")){
+				port_report_qualities[limitedto] = branch.DefaultEvent.QualitiesAffected[0].AssociatedQualityId;
+				console.log(branch);
+			}
+			
 			// console.log("...");
 			// check if the qualities required are met
 			let requirements_met = "";
@@ -137,21 +144,21 @@ eventsjson.forEach( single_event => {
 					if(requirements_met === ""){
 						requirements_met = checkIfQualityFulfilled(quality, level);
 						if(requirements_met){
-							console.log("first required quality possessed");
+							if(debug_events) console.log("first required quality possessed");
 						} else {
-							console.log("first required quality not possessed");
-							console.log(quality);
-							console.log(level);
+							if(debug_events) console.log("first required quality not possessed");
+							if(debug_events) console.log(quality);
+							if(debug_events)  console.log(level);
 						}
 					} else {
 						requirements_met = checkIfQualityFulfilled(quality, level) && requirements_met;
 						if(requirements_met){
-							console.log("further required quality possessed");
+							if(debug_events) console.log("further required quality possessed");
 						} else {
-							console.log("further required quality not possessed");
-							console.log("quality:");
-							console.log(quality);
-							console.log("level: " + level);
+							if(debug_events) console.log("further required quality not possessed");
+							if(debug_events) console.log("quality:");
+							if(debug_events) console.log(quality);
+							if(debug_events) console.log("level: " + level);
 						}
 					}
 				});
@@ -162,14 +169,15 @@ eventsjson.forEach( single_event => {
 						interactions[limitedto].push(branch);
 					}
 				} else {
-					console.log("rejecting quest: " + branch.Name);
+					if(debug_events) console.log("rejecting quest: " + branch.Name);
 				}
 			//}
 		});
 	}
 });
 
-console.log(interactions);
+console.log("port reports:");
+console.log(port_report_qualities);
 
 function checkIfQualityFulfilled(quality, level){
 	
@@ -746,7 +754,7 @@ class App extends React.Component <State> {
 																	
 																	</div>
 																}
-																{ port_reports.includes(data.Icon) && <img className={classes.ressources} src={images["paperstacksmall"].default} />  }
+																{ qualitiesPossessedList[port_report_qualities[data.Area.Id]] === 1 && <img className={classes.ressources} src={images["paperstacksmall"].default} />  }
 																{ commission.includes(data.Name) && <img className={classes.commission} src={images["papers5small"].default} />}
 															</div>
 														</AccordionSummary>
