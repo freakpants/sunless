@@ -75,19 +75,31 @@ savedata.QualitiesPossessedList.map(qualityPossessed => {
 
 const events = [];
 const interactions = [];
+
+
+
 eventsjson.forEach( single_event => {
+	if(single_event.Id === 121902){
+		console.log(single_event);
+	}
+	
 	events[single_event.Id] = single_event;
 	const required = single_event.QualitiesRequired;
 	single_event.QualitiesRequired.forEach(quality => {
-		if(quality.AssociatedQualityId === 116124){
-			// console.log(single_event);
+		if(quality.AssociatedQualityId === 109551){
+			console.log(single_event);
 		}
 	});
 	single_event.QualitiesAffected.forEach(quality => {
-		if(quality.AssociatedQualityId === 116124){
-			// console.log(single_event);
+		if(quality.AssociatedQualityId === 109551){
+			console.log(single_event);
 		}
 	});
+	
+	if( single_event.AssociatedQualityId == 109551){
+		console.log(single_event);
+	}
+	
 	if(single_event.Image === "papers5"){
 		// console.log(single_event);
 	}
@@ -97,13 +109,18 @@ eventsjson.forEach( single_event => {
 	}
 
 	let requirements_met = "";
-	single_event.QualitiesRequired.forEach(quality => {
-		if(requirements_met === ""){
-			requirements_met = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId]);
-		} else {
-			requirements_met = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId]) && requirements_met;
-		}
-	});
+	if( single_event.QualitiesRequired.length === 0){
+		// if there are no requirements, they are met
+		requirements_met = true;
+	} else {
+		single_event.QualitiesRequired.forEach(quality => {
+			if(requirements_met === ""){
+				requirements_met = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId]);
+			} else {
+				requirements_met = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId]) && requirements_met;
+			}
+		});
+	}
 	if(!requirements_met){
 		return;
 	}
@@ -111,44 +128,43 @@ eventsjson.forEach( single_event => {
 		
 		const limitedto = single_event.LimitedToArea.Id;
 		single_event.ChildBranches.forEach(branch => {
-			console.log("...");
+			// console.log("...");
 			// check if the qualities required are met
 			let requirements_met = "";
-			branch.QualitiesRequired.forEach(quality => {
-				const level = qualitiesPossessedList[quality.AssociatedQualityId];
-				if(requirements_met === ""){
-					requirements_met = checkIfQualityFulfilled(quality, level);
-					if(requirements_met){
-						console.log("first required quality possessed");
+			// if(branch.Name === "Entertain your crew's terrified speculations"){
+				branch.QualitiesRequired.forEach(quality => {			
+					const level = qualitiesPossessedList[quality.AssociatedQualityId];
+					if(requirements_met === ""){
+						requirements_met = checkIfQualityFulfilled(quality, level);
+						if(requirements_met){
+							console.log("first required quality possessed");
+						} else {
+							console.log("first required quality not possessed");
+							console.log(quality);
+							console.log(level);
+						}
 					} else {
-						console.log("first required quality not possessed");
-						console.log(quality);
-						console.log(level);
+						requirements_met = checkIfQualityFulfilled(quality, level) && requirements_met;
+						if(requirements_met){
+							console.log("further required quality possessed");
+						} else {
+							console.log("further required quality not possessed");
+							console.log("quality:");
+							console.log(quality);
+							console.log("level: " + level);
+						}
+					}
+				});
+				if(requirements_met){
+					if(interactions[limitedto] === undefined){
+						interactions[limitedto] = [branch];
+					} else {
+						interactions[limitedto].push(branch);
 					}
 				} else {
-					requirements_met = checkIfQualityFulfilled(quality, level) && requirements_met;
-					if(requirements_met){
-						console.log("further required quality possessed");
-					} else {
-						console.log("further required quality not possessed");
-						console.log("quality:");
-						console.log(quality);
-						console.log("level: " + level);
-					}
+					console.log("rejecting quest: " + branch.Name);
 				}
-			});
-			if(requirements_met){
-				if(interactions[limitedto] === undefined){
-					interactions[limitedto] = [branch];
-				} else {
-					interactions[limitedto].push(branch);
-				}
-			} else {
-				console.log("rejecting quest: " + branch.Name);
-				if(branch.Name === "Aid the Sprightly Visionary"){
-					console.log(branch);
-				}
-			}
+			//}
 		});
 	}
 });
@@ -173,7 +189,7 @@ function checkIfQualityFulfilled(quality, level){
 	}
 	let requirements_met = minLevel && maxLevel && (minLevel !== null || maxLevel !== null);
 	if(quality.VisibleWhenRequirementFailed){
-		requirements_met = !requirements_met;
+		requirements_met = true;
 	}
 	return requirements_met;
 }
@@ -546,6 +562,14 @@ class App extends React.Component <State> {
 							case "PolythremePort":
 								data.Name = "Polythreme";
 								data.Icon =  "polythreme";
+							break;
+							case "FieldhavenPort":
+								data.Name = "Shepherd's Isles";
+								data.Icon = "generic_port";
+							break;
+							case "DemeauxIsland":
+								data.Name = "Iron & Misery Co. Funging Station";
+								data.Icon = "demeauxisland_port";
 							break;
 							// case "":
 								// data.Name = "";
