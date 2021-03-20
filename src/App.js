@@ -130,11 +130,18 @@ eventsjson.forEach( single_event => {
 		
 		const limitedto = single_event.LimitedToArea.Id;
 		single_event.ChildBranches.forEach(branch => {
-			if(branch.Name.includes("Port Report")){
+			// this is not the best way of determining port report qualities
+			// preferably, we would gather all qualities that have "port report" in their name
+			// then we would check events, to see whether they affect a port report quality
+			// if they do, we then know that the port report is linked to that port
+			if(branch.Name.includes("Port Report") || branch.Name.includes("Gather intelligence")){
+				if(port_report_qualities[limitedto] === undefined){
+					port_report_qualities[limitedto] = [];
+				}
 				if(branch.SuccessEvent !== null){
-					port_report_qualities[limitedto] = branch.SuccessEvent.QualitiesAffected[0].AssociatedQualityId;
+					port_report_qualities[limitedto].push(branch.SuccessEvent.QualitiesAffected[0].AssociatedQualityId);
 				} else {
-					port_report_qualities[limitedto] = branch.DefaultEvent.QualitiesAffected[0].AssociatedQualityId;
+					port_report_qualities[limitedto].push(branch.DefaultEvent.QualitiesAffected[0].AssociatedQualityId);
 				}
 				console.log(branch);
 			}
@@ -617,8 +624,6 @@ class App extends React.Component <State> {
 			commissions[split2[0]] = [split2[1]];
 		});
 		
-		// determine which port reports we have
-		const port_reports = [];
 		let echoes = 0;
 		let commission;
 		savedata.QualitiesPossessedList.map(qualityPossessed => {
@@ -634,11 +639,6 @@ class App extends React.Component <State> {
 				// we dont actually possess this
 				return;
 			}
-			const quality = goods[qualityId];
-			if(quality !== undefined && quality.Name.includes("Port Report")){
-				port_reports.push(quality.Image);
-			} 
-
 		});
 
 		return (
@@ -748,8 +748,8 @@ class App extends React.Component <State> {
 																}
 															</div>
 															<div className={classes.portname}>{interactions[data.Area.Id] && 
-																<div className={classes.questcounter}>{interactions[data.Area.Id].length} Quests - </div>
-															}{ data.Name }  
+																<div className={classes.questcounter}>{interactions[data.Area.Id].length} Quests</div>
+															}{ data.Name } {data.Area.Id}   
 															</div>
 															<div className={classes.infoIcons}>
 																{ data.exchange && data.exchange.fuel &&
@@ -766,7 +766,12 @@ class App extends React.Component <State> {
 																	
 																	</div>
 																}
-																{ qualitiesPossessedList[port_report_qualities[data.Area.Id]] === 1 && <img className={classes.ressources} src={images["paperstacksmall"].default} />  }
+																{ port_report_qualities[data.Area.Id] && port_report_qualities[data.Area.Id].map(quality => {
+																	if( qualitiesPossessedList[quality] === 1){
+																		return (<img className={classes.ressources} src={images["paperstacksmall"].default} />);
+																	}
+																}) 
+																}
 																{ commission.includes(data.Name) && <img className={classes.commission} src={images["papers5small"].default} />}
 															</div>
 														</AccordionSummary>
