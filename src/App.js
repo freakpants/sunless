@@ -74,33 +74,19 @@ savedata.QualitiesPossessedList.map(qualityPossessed => {
 });
 
 const events = [];
+eventsjson.forEach( single_event => {
+	events[single_event.Id] = single_event;
+});
+
 const interactions = [];
+const linkEvents = [];
 
 const port_report_qualities = [];
 
 
 const debug_events = false;
 eventsjson.forEach( single_event => {
-	if(single_event.Id === 121902){
-		console.log(single_event);
-	}
-	
-	events[single_event.Id] = single_event;
-	const required = single_event.QualitiesRequired;
-	single_event.QualitiesRequired.forEach(quality => {
-		if(quality.AssociatedQualityId === 109551){
-			console.log(single_event);
-		}
-	});
-	single_event.QualitiesAffected.forEach(quality => {
-		if(quality.AssociatedQualityId === 109551){
-			console.log(single_event);
-		}
-	});
-	
-	if( single_event.AssociatedQualityId == 109551){
-		console.log(single_event);
-	}
+
 	
 	if(single_event.Image === "papers5"){
 		// console.log(single_event);
@@ -147,12 +133,45 @@ eventsjson.forEach( single_event => {
 				} else {
 					port_report_qualities[limitedto].push(branch.DefaultEvent.QualitiesAffected[0].AssociatedQualityId);
 				}
-				console.log(branch);
+				// console.log({branch});
 			}
 			
 			// console.log("...");
 			// check if the qualities required are met
 			let requirements_met = "";
+				
+			const branchname = branch.Name;
+			console.log({ branchname });	
+			console.log({ branch});	
+				
+			// check for linked events, that are actually assigned to limbo and wouldnt show up because of that
+			if(branch.DefaultEvent !== undefined && branch.DefaultEvent.Autofire === true && branch.DefaultEvent.LinkToEvent !== null && branch.DefaultEvent.LinkToEvent.Autofire === true){
+				const linkEvent = events[branch.DefaultEvent.LinkToEvent.Id];
+				let link_event_requirements_met = "";
+				if( linkEvent.QualitiesRequired.length === 0){
+					// if there are no requirements, they are met
+					link_event_requirements_met = true;
+				} else {
+					linkEvent.QualitiesRequired.forEach(quality => {
+						if(link_event_requirements_met === ""){
+							link_event_requirements_met = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId]);
+						} else {
+							link_event_requirements_met = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId]) && link_event_requirements_met;
+						}
+					});
+				}
+				
+				
+				if(link_event_requirements_met && linkEvent.LimitedToArea !== undefined && linkEvent.LimitedToArea.Id === 101956){
+					const linkEventName = linkEvent.Name;
+					console.log({ linkEventName });
+					if(linkEvents[limitedto] === undefined){
+						linkEvents[limitedto] = [ linkEvent ];
+					} else {
+						linkEvents[limitedto].push(linkEvent);
+					}
+				}
+			}
 			// if(branch.Name === "Entertain your crew's terrified speculations"){
 				branch.QualitiesRequired.forEach(quality => {			
 					const level = qualitiesPossessedList[quality.AssociatedQualityId];
@@ -184,15 +203,19 @@ eventsjson.forEach( single_event => {
 						interactions[limitedto].push(branch);
 					}
 				} else {
-					if(debug_events) console.log("rejecting quest: " + branch.Name);
+					const branchName = branch.Name;
+					if(debug_events) console.log("rejecting quest: ");
+					if(debug_events) console.log({ branchName  });
 				}
 			//}
 		});
 	}
 });
 
-console.log("port reports:");
-console.log(port_report_qualities);
+console.log({linkEvents});
+
+const ShadowyWorkinKhansHeart = qualitiesPossessedList[146643];
+console.log({ ShadowyWorkinKhansHeart });
 
 function checkIfQualityFulfilled(quality, level){
 	
@@ -789,6 +812,15 @@ class App extends React.Component <State> {
 																<ul className={classes.list} >
 															{ interactions[data.Area.Id] && 
 																 interactions[data.Area.Id].map((quest) =>{
+																	return (
+																	<li className={classes.questrow}>
+																	{ quest.Name }
+																	</li>
+																	)
+																})
+															}
+																																										{ linkEvents[data.Area.Id] && 
+																 linkEvents[data.Area.Id].map((quest) =>{
 																	return (
 																	<li className={classes.questrow}>
 																	{ quest.Name }
