@@ -21,6 +21,7 @@ import quests from './quests.json';
 import { createStyles, makeStyles } from '@material-ui/core/styles';
 import { withStyles } from '@material-ui/styles';
 import DeleteForeverIcon from '@material-ui/icons/DeleteForever';
+import clsx from 'clsx';
 
 const context = require.context('../icons', true, /.png$/);
 const images = {};
@@ -103,9 +104,9 @@ eventsjson.forEach( single_event => {
 	} else {
 		single_event.QualitiesRequired.forEach(quality => {
 			if(requirements_met === ""){
-				requirements_met = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId]);
+				requirements_met = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId], true);
 			} else {
-				requirements_met = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId]) && requirements_met;
+				requirements_met = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId], true) && requirements_met;
 			}
 		});
 	}
@@ -114,7 +115,7 @@ eventsjson.forEach( single_event => {
 	}
 	if(single_event.LimitedToArea !== null){
 		
-		const limitedto = single_event.LimitedToArea.Id;
+		let limitedto = single_event.LimitedToArea.Id;
 		single_event.ChildBranches.forEach(branch => {
 			// this is not the best way of determining port report qualities
 			// preferably, we would gather all qualities that have "port report" in their name
@@ -141,11 +142,11 @@ eventsjson.forEach( single_event => {
 			let requirements_met = "";
 				
 			const branchname = branch.Name;
-			console.log({ branchname });	
-			console.log({ branch});	
+			// console.log({ branchname });	
+			// console.log({ branch});	
 				
 			// check for linked events, that are actually assigned to limbo and wouldnt show up because of that
-			if(branch.DefaultEvent !== undefined && branch.DefaultEvent.Autofire === true && branch.DefaultEvent.LinkToEvent !== null && branch.DefaultEvent.LinkToEvent.Autofire === true){
+			/* if(branch.DefaultEvent !== undefined && branch.DefaultEvent.Autofire === true && branch.DefaultEvent.LinkToEvent !== null && branch.DefaultEvent.LinkToEvent.Autofire === true){
 				const linkEvent = events[branch.DefaultEvent.LinkToEvent.Id];
 				let link_event_requirements_met = "";
 				if( linkEvent.QualitiesRequired.length === 0){
@@ -154,7 +155,8 @@ eventsjson.forEach( single_event => {
 				} else {
 					linkEvent.QualitiesRequired.forEach(quality => {
 						if(link_event_requirements_met === ""){
-							link_event_requirements_met = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId]);
+							const metOrShow = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId])
+							link_event_requirements_met = metOrShow.met || metOrShow.show_anyway;
 						} else {
 							link_event_requirements_met = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId]) && link_event_requirements_met;
 						}
@@ -164,19 +166,19 @@ eventsjson.forEach( single_event => {
 				
 				if(link_event_requirements_met && linkEvent.LimitedToArea !== undefined && linkEvent.LimitedToArea.Id === 101956){
 					const linkEventName = linkEvent.Name;
-					console.log({ linkEventName });
+					// console.log({ linkEventName });
 					if(linkEvents[limitedto] === undefined){
 						linkEvents[limitedto] = [ linkEvent ];
 					} else {
 						linkEvents[limitedto].push(linkEvent);
 					}
 				}
-			}
+			} */
 			// if(branch.Name === "Entertain your crew's terrified speculations"){
 				branch.QualitiesRequired.forEach(quality => {			
 					const level = qualitiesPossessedList[quality.AssociatedQualityId];
 					if(requirements_met === ""){
-						requirements_met = checkIfQualityFulfilled(quality, level);
+						requirements_met = checkIfQualityFulfilled(quality, level, true);
 						if(requirements_met){
 							if(debug_events) console.log("first required quality possessed");
 						} else {
@@ -185,7 +187,7 @@ eventsjson.forEach( single_event => {
 							if(debug_events) console.log(level);
 						}
 					} else {
-						requirements_met = checkIfQualityFulfilled(quality, level) && requirements_met;
+						requirements_met = checkIfQualityFulfilled(quality, level, true) && requirements_met;
 						if(requirements_met){
 							if(debug_events) console.log("further required quality possessed");
 						} else {
@@ -197,6 +199,10 @@ eventsjson.forEach( single_event => {
 					}
 				});
 				if(requirements_met){
+					if( limitedto === 101956 && branch.DefaultEvent.LinkToEvent !== null){
+						const linkEvent = events[branch.DefaultEvent.LinkToEvent.Id];
+						if(linkEvent.LimitedToArea !== null) limitedto = linkEvent.LimitedToArea.Id;
+					}
 					if(interactions[limitedto] === undefined){
 						interactions[limitedto] = [branch];
 					} else {
@@ -212,12 +218,18 @@ eventsjson.forEach( single_event => {
 	}
 });
 
-console.log({linkEvents});
+// console.log({linkEvents});
 
 const ShadowyWorkinKhansHeart = qualitiesPossessedList[146643];
-console.log({ ShadowyWorkinKhansHeart });
+// console.log({ ShadowyWorkinKhansHeart });
 
-function checkIfQualityFulfilled(quality, level){
+function checkIfQualityFulfilled(quality, level, forDisplay = false){
+	
+	// if we only want to know whether the quest is displayed, we can return true for non-hidden quests
+	// if we want to know whether the quest can actually be completed, we must be more strict
+	if( quality.VisibleWhenRequirementFailed && forDisplay){
+		return true;
+	}
 	
 	let minLevel = false;
 	let maxLevel = false;
@@ -234,15 +246,15 @@ function checkIfQualityFulfilled(quality, level){
 		return false;
 	}
 	let requirements_met = minLevel && maxLevel && (minLevel !== null || maxLevel !== null);
-	if(quality.VisibleWhenRequirementFailed){
-		requirements_met = true;
-	}
+
 	return requirements_met;
 }
 
 // console.log(goods[126174]);
 // console.log(qualitiesPossessedList[128593]);
 
+const limbo = interactions[101956];
+// console.log({limbo});
 
 
 let  ports = json_ports.ports;
@@ -332,6 +344,11 @@ const styles = theme => ({
 		objectPosition: "0 -5px",
 		margin: 2
 	},
+	required: {
+		height: 24,
+		margin: 2,
+		border: "1px solid black"
+	},
 	commission:{
 		height: 24,
 		width: 24,
@@ -364,11 +381,10 @@ const styles = theme => ({
 		height: 52,
 	},
 	list:{
-		paddingInlineStart: "unset",
+		paddingInlineStart: 10,
 	},
 	questrow:{
 		width: "100%",
-		display: "flex",
 		flexDirection: "row",
 		marginBottom: 1,
 		textAlign: "left",
@@ -412,9 +428,66 @@ const styles = theme => ({
 	questcounter:{
 		fontWeight: "bold",
 		color: "red"
+	},
+	notPossessed:{
+		opacity: 0.6,
+		border: "1px solid red"
+	},
+	questtitle:{
+		fontWeight: "bold",
+		color: "black"
+	},
+	questdescription:{
+		fontSize: 12
+	},
+	questicons:{
+		textAlign: "end"
 	}
 });
 
+
+
+
+
+const QuestRow = (props) => {
+	const {classes, quest} = props;
+	let requirements = [];
+	quest.QualitiesRequired.map(quality => { 
+		if( goods[quality.AssociatedQualityId] !== undefined){
+			const associatedQualityId = quality.AssociatedQualityId;
+			console.log(goods[associatedQualityId].Name);
+			console.log(qualitiesPossessedList[associatedQualityId]);
+			console.log(quality);
+			console.log(checkIfQualityFulfilled(quality, qualitiesPossessedList[associatedQualityId]));
+			requirements.push(
+				{
+					"src": images[goods[associatedQualityId].Image + "small"].default,
+					"notPossessed" : ! checkIfQualityFulfilled(quality, qualitiesPossessedList[associatedQualityId], false)
+				}
+			);
+		}
+	});
+	// {clsx(classes.avatar, { [classes.avatarSelected]: data === option.value,})}
+	return (
+	<li className={classes.questrow}>
+		<div className={classes.questtitle}>{ quest.Name }</div>
+		<div className={classes.questdescription}>{quest.Description}</div>
+		<div className={classes.questicons}>{ requirements.map(req => {
+				return <img className={clsx(classes.required, { [classes.notPossessed]: req.notPossessed })} src={req.src} />
+			}) 
+		}
+		</div>
+	</li>
+	
+	);
+}
+
+/* 
+
+		/* { quest.QualitiesRequired.map(quality => { 
+			
+		});
+		}	*/
 
 class App extends React.Component <State> {
 
@@ -812,22 +885,9 @@ class App extends React.Component <State> {
 																<ul className={classes.list} >
 															{ interactions[data.Area.Id] && 
 																 interactions[data.Area.Id].map((quest) =>{
-																	return (
-																	<li className={classes.questrow}>
-																	{ quest.Name }
-																	</li>
-																	)
+																	return <QuestRow goods={goods} classes={classes} quest={quest} />
 																})
-															}
-																																										{ linkEvents[data.Area.Id] && 
-																 linkEvents[data.Area.Id].map((quest) =>{
-																	return (
-																	<li className={classes.questrow}>
-																	{ quest.Name }
-																	</li>
-																	)
-																})
-															}
+															}																										
 																</ul>
 															</Grid>
 														</AccordionDetails>
