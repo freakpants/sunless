@@ -134,7 +134,11 @@ eventsjson.forEach( single_event => {
 			// preferably, we would gather all qualities that have "port report" in their name
 			// then we would check events, to see whether they affect a port report quality
 			// if they do, we then know that the port report is linked to that port
-			if(branch.Name.includes("Port Report") || branch.Name.includes("Gather intelligence")){
+			if(branch.Name.includes("Port Report") 
+			|| branch.Name.includes("Gather intelligence")
+			|| branch.Name.includes("Chat to the port-folk")
+			|| branch.Name.includes("Gather gossip")
+			){
 				if(port_report_qualities[limitedto] === undefined){
 					port_report_qualities[limitedto] = [];
 				}
@@ -626,6 +630,7 @@ class App extends React.Component <State> {
 		
 		let echoes = 0;
 		let commission;
+		let something_awaits_you;
 		savedata.QualitiesPossessedList.map(qualityPossessed => {
 			const qualityId = qualityPossessed.AssociatedQualityId;
 			const level = qualityPossessed.Level;
@@ -635,10 +640,14 @@ class App extends React.Component <State> {
 			if(qualityId === 102328){
 				commission = commissions[level].toString();
 			}
+			if(qualityId === 102973){
+				something_awaits_you = level;
+			}
 			if(level === 0){
 				// we dont actually possess this
 				return;
 			}
+		
 		});
 
 		return (
@@ -728,9 +737,9 @@ class App extends React.Component <State> {
 					})}
 				</Grid>
 			</Grid>
-			<div>
-			Echoes: {echoes} <br></br>
-			Commission: {commission}</div>
+			<div>Echoes: {echoes}</div>
+			<div>Commission: {commission}</div>
+			<div>SAY: {something_awaits_you}</div>
 			{ grid.map(row =>{
 				return (
 					<Grid container classes={{ root: classes.mapRow}} >
