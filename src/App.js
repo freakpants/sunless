@@ -84,8 +84,69 @@ const linkEvents = [];
 
 const port_report_qualities = [];
 
-
 const debug_events = false;
+
+// in a first pass, determine the linkEvents, so that we know which quests in limbo can be displayed
+eventsjson.forEach( single_event => {
+	let requirements_met = "";
+	if( single_event.QualitiesRequired.length === 0){
+		// if there are no requirements, they are met
+		requirements_met = true;
+	} else {
+		single_event.QualitiesRequired.forEach(quality => {
+			if(requirements_met === ""){
+				requirements_met = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId], true);
+			} else {
+				requirements_met = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId], true) && requirements_met;
+			}
+		});
+	}
+	if(!requirements_met){
+		return;
+	}
+	if(single_event.LimitedToArea !== null){
+		let limitedto = single_event.LimitedToArea.Id;
+		single_event.ChildBranches.forEach(branch => {
+			let requirements_met = "";
+			// if(branch.Name === "Entertain your crew's terrified speculations"){
+				branch.QualitiesRequired.forEach(quality => {			
+					const level = qualitiesPossessedList[quality.AssociatedQualityId];
+					if(requirements_met === ""){
+						requirements_met = checkIfQualityFulfilled(quality, level, true);
+						if(requirements_met){
+							if(debug_events) console.log("first required quality possessed");
+						} else {
+							if(debug_events) console.log("first required quality not possessed");
+							if(debug_events) console.log(quality);
+							if(debug_events) console.log(level);
+						}
+					} else {
+						requirements_met = checkIfQualityFulfilled(quality, level, true) && requirements_met;
+						if(requirements_met){
+							if(debug_events) console.log("further required quality possessed");
+						} else {
+							if(debug_events) console.log("further required quality not possessed");
+							if(debug_events) console.log("quality:");
+							if(debug_events) console.log(quality);
+							if(debug_events) console.log("level: " + level);
+						}
+					}
+				});
+				
+				
+				// check for linked events, that are actually assigned to limbo and wouldnt show up because of that
+				if(branch.DefaultEvent !== undefined && branch.DefaultEvent.LinkToEvent !== null){
+					const linkEvent = events[branch.DefaultEvent.LinkToEvent.Id];
+					// let the limbo task know if the requirements of its parent task are fulfilled
+					linkEvents[linkEvent.Id] = requirements_met;
+					
+				} 
+			//}
+		});
+	}
+});
+
+
 eventsjson.forEach( single_event => {
 
 	
@@ -110,10 +171,12 @@ eventsjson.forEach( single_event => {
 			}
 		});
 	}
+		
 	if(!requirements_met){
 		return;
 	}
 	if(single_event.LimitedToArea !== null){
+		
 		
 		let limitedto = single_event.LimitedToArea.Id;
 		single_event.ChildBranches.forEach(branch => {
@@ -145,35 +208,9 @@ eventsjson.forEach( single_event => {
 			// console.log({ branchname });	
 			// console.log({ branch});	
 				
-			// check for linked events, that are actually assigned to limbo and wouldnt show up because of that
-			/* if(branch.DefaultEvent !== undefined && branch.DefaultEvent.Autofire === true && branch.DefaultEvent.LinkToEvent !== null && branch.DefaultEvent.LinkToEvent.Autofire === true){
-				const linkEvent = events[branch.DefaultEvent.LinkToEvent.Id];
-				let link_event_requirements_met = "";
-				if( linkEvent.QualitiesRequired.length === 0){
-					// if there are no requirements, they are met
-					link_event_requirements_met = true;
-				} else {
-					linkEvent.QualitiesRequired.forEach(quality => {
-						if(link_event_requirements_met === ""){
-							const metOrShow = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId])
-							link_event_requirements_met = metOrShow.met || metOrShow.show_anyway;
-						} else {
-							link_event_requirements_met = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId]) && link_event_requirements_met;
-						}
-					});
-				}
+			// check if the 	
 				
-				
-				if(link_event_requirements_met && linkEvent.LimitedToArea !== undefined && linkEvent.LimitedToArea.Id === 101956){
-					const linkEventName = linkEvent.Name;
-					// console.log({ linkEventName });
-					if(linkEvents[limitedto] === undefined){
-						linkEvents[limitedto] = [ linkEvent ];
-					} else {
-						linkEvents[limitedto].push(linkEvent);
-					}
-				}
-			} */
+
 			// if(branch.Name === "Entertain your crew's terrified speculations"){
 				branch.QualitiesRequired.forEach(quality => {			
 					const level = qualitiesPossessedList[quality.AssociatedQualityId];
@@ -198,10 +235,20 @@ eventsjson.forEach( single_event => {
 						}
 					}
 				});
+				
 				if(requirements_met){
+					if(branch.Name === "A collector"){
+						// parent event has no requirements, has id 181952, limited to limbo
+					}
+					// if we are on a limbo quest, we need to check if we've actually been sent here
+					// if we just redirect every quest to the parent location, we ignore the requirements of their parent quest
 					if( limitedto === 101956 && branch.DefaultEvent.LinkToEvent !== null){
 						const linkEvent = events[branch.DefaultEvent.LinkToEvent.Id];
-						if(linkEvent.LimitedToArea !== null) limitedto = linkEvent.LimitedToArea.Id;
+						const linkName = linkEvent.Name;
+						
+						if(linkEvent.LimitedToArea !== null && linkEvents[single_event.Id]){
+							limitedto = linkEvent.LimitedToArea.Id;
+						}
 					}
 					if(interactions[limitedto] === undefined){
 						interactions[limitedto] = [branch];
@@ -213,12 +260,14 @@ eventsjson.forEach( single_event => {
 					if(debug_events) console.log("rejecting quest: ");
 					if(debug_events) console.log({ branchName  });
 				}
-			//}
+				
+				
+							//}
 		});
 	}
 });
 
-// console.log({linkEvents});
+
 
 const ShadowyWorkinKhansHeart = qualitiesPossessedList[146643];
 // console.log({ ShadowyWorkinKhansHeart });
@@ -455,10 +504,10 @@ const QuestRow = (props) => {
 	quest.QualitiesRequired.map(quality => { 
 		if( goods[quality.AssociatedQualityId] !== undefined){
 			const associatedQualityId = quality.AssociatedQualityId;
-			console.log(goods[associatedQualityId].Name);
+			/* console.log(goods[associatedQualityId].Name);
 			console.log(qualitiesPossessedList[associatedQualityId]);
 			console.log(quality);
-			console.log(checkIfQualityFulfilled(quality, qualitiesPossessedList[associatedQualityId]));
+			console.log(checkIfQualityFulfilled(quality, qualitiesPossessedList[associatedQualityId])); */
 			requirements.push(
 				{
 					"src": images[goods[associatedQualityId].Image + "small"].default,
