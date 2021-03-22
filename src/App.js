@@ -18,11 +18,11 @@ import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import quests from './quests.json';
-import { createStyles, makeStyles } from '@material-ui/core/styles';
 import { withStyles } from '@material-ui/styles';
 import DeleteForeverIcon from '@material-ui/icons/DeleteForever';
 import clsx from 'clsx';
 import Tooltip from '@material-ui/core/Tooltip';
+import { withCookies, Cookies } from 'react-cookie';
 
 const context = require.context('../icons', true, /.png$/);
 const images = {};
@@ -86,187 +86,6 @@ const linkEvents = [];
 const port_report_qualities = [];
 
 const debug_events = false;
-
-// in a first pass, determine the linkEvents, so that we know which quests in limbo can be displayed
-eventsjson.forEach( single_event => {
-	let requirements_met = "";
-	if( single_event.QualitiesRequired.length === 0){
-		// if there are no requirements, they are met
-		requirements_met = true;
-	} else {
-		single_event.QualitiesRequired.forEach(quality => {
-			if(requirements_met === ""){
-				requirements_met = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId], true);
-			} else {
-				requirements_met = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId], true) && requirements_met;
-			}
-		});
-	}
-	if(!requirements_met){
-		return;
-	}
-	if(single_event.LimitedToArea !== null){
-		let limitedto = single_event.LimitedToArea.Id;
-		single_event.ChildBranches.forEach(branch => {
-			let requirements_met = "";
-			// if(branch.Name === "Entertain your crew's terrified speculations"){
-				branch.QualitiesRequired.forEach(quality => {			
-					const level = qualitiesPossessedList[quality.AssociatedQualityId];
-					if(requirements_met === ""){
-						requirements_met = checkIfQualityFulfilled(quality, level, true);
-						if(requirements_met){
-							if(debug_events) console.log("first required quality possessed");
-						} else {
-							if(debug_events) console.log("first required quality not possessed");
-							if(debug_events) console.log(quality);
-							if(debug_events) console.log(level);
-						}
-					} else {
-						requirements_met = checkIfQualityFulfilled(quality, level, true) && requirements_met;
-						if(requirements_met){
-							if(debug_events) console.log("further required quality possessed");
-						} else {
-							if(debug_events) console.log("further required quality not possessed");
-							if(debug_events) console.log("quality:");
-							if(debug_events) console.log(quality);
-							if(debug_events) console.log("level: " + level);
-						}
-					}
-				});
-				
-				
-				// check for linked events, that are actually assigned to limbo and wouldnt show up because of that
-				if(branch.DefaultEvent !== undefined && branch.DefaultEvent.LinkToEvent !== null){
-					const linkEvent = events[branch.DefaultEvent.LinkToEvent.Id];
-					// let the limbo task know if the requirements of its parent task are fulfilled
-					linkEvents[linkEvent.Id] = requirements_met;
-					
-				} 
-			//}
-		});
-	}
-});
-
-
-eventsjson.forEach( single_event => {
-
-	
-	if(single_event.Image === "papers5"){
-		// console.log(single_event);
-	}
-	if(single_event.Category === "QuesticleStep, Gold"){
-		// events that only happen on your ship
-		// console.log(single_event);
-	}
-
-	let requirements_met = "";
-	if( single_event.QualitiesRequired.length === 0){
-		// if there are no requirements, they are met
-		requirements_met = true;
-	} else {
-		single_event.QualitiesRequired.forEach(quality => {
-			if(requirements_met === ""){
-				requirements_met = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId], true);
-			} else {
-				requirements_met = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId], true) && requirements_met;
-			}
-		});
-	}
-		
-	if(!requirements_met){
-		return;
-	}
-	if(single_event.LimitedToArea !== null){
-		
-		
-		let limitedto = single_event.LimitedToArea.Id;
-		single_event.ChildBranches.forEach(branch => {
-			// this is not the best way of determining port report qualities
-			// preferably, we would gather all qualities that have "port report" in their name
-			// then we would check events, to see whether they affect a port report quality
-			// if they do, we then know that the port report is linked to that port
-			if(branch.Name.includes("Port Report") 
-			|| branch.Name.includes("Gather intelligence")
-			|| branch.Name.includes("Chat to the port-folk")
-			|| branch.Name.includes("Gather gossip")
-			){
-				if(port_report_qualities[limitedto] === undefined){
-					port_report_qualities[limitedto] = [];
-				}
-				if(branch.SuccessEvent !== null){
-					port_report_qualities[limitedto].push(branch.SuccessEvent.QualitiesAffected[0].AssociatedQualityId);
-				} else {
-					port_report_qualities[limitedto].push(branch.DefaultEvent.QualitiesAffected[0].AssociatedQualityId);
-				}
-				// console.log({branch});
-			}
-			
-			// console.log("...");
-			// check if the qualities required are met
-			let requirements_met = "";
-				
-			const branchname = branch.Name;
-			// console.log({ branchname });	
-			// console.log({ branch});	
-				
-			// check if the 	
-				
-
-			// if(branch.Name === "Entertain your crew's terrified speculations"){
-				branch.QualitiesRequired.forEach(quality => {			
-					const level = qualitiesPossessedList[quality.AssociatedQualityId];
-					if(requirements_met === ""){
-						requirements_met = checkIfQualityFulfilled(quality, level, true);
-						if(requirements_met){
-							if(debug_events) console.log("first required quality possessed");
-						} else {
-							if(debug_events) console.log("first required quality not possessed");
-							if(debug_events) console.log(quality);
-							if(debug_events) console.log(level);
-						}
-					} else {
-						requirements_met = checkIfQualityFulfilled(quality, level, true) && requirements_met;
-						if(requirements_met){
-							if(debug_events) console.log("further required quality possessed");
-						} else {
-							if(debug_events) console.log("further required quality not possessed");
-							if(debug_events) console.log("quality:");
-							if(debug_events) console.log(quality);
-							if(debug_events) console.log("level: " + level);
-						}
-					}
-				});
-				
-				if(requirements_met){
-					if(branch.Name === "A collector"){
-						// parent event has no requirements, has id 181952, limited to limbo
-					}
-					// if we are on a limbo quest, we need to check if we've actually been sent here
-					// if we just redirect every quest to the parent location, we ignore the requirements of their parent quest
-					if( limitedto === 101956 && branch.DefaultEvent.LinkToEvent !== null){
-						const linkEvent = events[branch.DefaultEvent.LinkToEvent.Id];
-						const linkName = linkEvent.Name;
-						
-						if(linkEvent.LimitedToArea !== null && linkEvents[single_event.Id]){
-							limitedto = linkEvent.LimitedToArea.Id;
-						}
-					}
-					if(interactions[limitedto] === undefined){
-						interactions[limitedto] = [branch];
-					} else {
-						interactions[limitedto].push(branch);
-					}
-				} else {
-					const branchName = branch.Name;
-					if(debug_events) console.log("rejecting quest: ");
-					if(debug_events) console.log({ branchName  });
-				}
-				
-				
-							//}
-		});
-	}
-});
 
 function sort_quests(quests){
 	const sorted_quests = { locked: [], unlocked:[]};
@@ -553,7 +372,7 @@ const QuestCounter = (props) => {
 }
 
 const QuestRow = (props) => {
-	const {classes, quest} = props;
+	const {classes, quest, handleQuestRemove} = props;
 	let requirements = [];
 	quest.QualitiesRequired.map(quality => { 
 		if( goods[quality.AssociatedQualityId] !== undefined){
@@ -571,7 +390,7 @@ const QuestRow = (props) => {
 				if(quality.MaxLevel === 0){
 					amountNeeded = "no ";
 				} else {
-					amountNeeded = "no more than " + quality.MaxLevel;
+					amountNeeded = `no more than ${quality.MaxLevel}`;
 				}
 			} else {
 				amountNeeded = "any? ";
@@ -590,7 +409,7 @@ const QuestRow = (props) => {
 	// {clsx(classes.avatar, { [classes.avatarSelected]: data === option.value,})}
 	return (
 	<li className={classes.questrow}>
-		<div className={classes.questtitle}>{ quest.Name }</div>
+		<div className={classes.questtitle}>{ quest.Name }<div className={classes.deleteicon}><DeleteForeverIcon onClick={() => handleQuestRemove(quest.Id)} /></div></div>
 		<div className={classes.questdescription}>{quest.Description}</div>
 		<div className={classes.questicons}>{ requirements.map(req => {
 				const unlock = req.amountNeeded + " " + req.quality + " (you have " + req.amountPossessed + ")";
@@ -615,11 +434,25 @@ class App extends React.Component{
 
 	constructor(props) {
 		super(props);
-		this.state = { selectedPort: "none", amount: 0, quests: quests , selectedGood: 110135 };
+		
+		const { cookies } = props;
+
+
+		this.state = { 
+			selectedPort: "none", amount: 0, 
+			ignored_quests: cookies.get("ignored_quests") || [], 
+			selectedGood: 110135 
+		};
+
+		// This binding is necessary to make `this` work in the callback
+		this.handleQuestRemove = this.handleQuestRemove.bind(this);
+
+		
+
 	}	
 
 	handlePortSelect(portname){
-		this.setState({selectedPort: portname });
+		this.setState({selectedPort: portname });	
 	}
 
 	handleQuestAdd(){
@@ -645,18 +478,198 @@ class App extends React.Component{
 		this.setState({selectedGood: e.target.value });
 	}
 
-	handleQuestRemove(port, quest_index){
+	handleQuestRemove(questid){
+
+		const { cookies } = this.props;
+		
 		this.setState(prevState => ({
-			quests: {                  // object that we want to update
-				...prevState.quests,    // keep all other key-value pairs
-				[port]: prevState.quests[port].slice(0, quest_index).concat(prevState.quests[port].slice(quest_index + 1, prevState.quests[port].length))
-			}
+			ignored_quests: [...prevState.ignored_quests, questid]
 		})); 
+		cookies.set("ignored_quests", this.state.ignored_quests);
+
 	}
 
 	render(){
 		const { classes } = this.props;
 		
+
+
+		const ignored_quests = this.state.ignored_quests;
+		console.log({ ignored_quests });
+
+		// in a first pass, determine the linkEvents, so that we know which quests in limbo can be displayed
+		eventsjson.forEach( single_event => {
+			let requirements_met = "";
+			if( single_event.QualitiesRequired.length === 0){
+				// if there are no requirements, they are met
+				requirements_met = true;
+			} else {
+				single_event.QualitiesRequired.forEach(quality => {
+					if(requirements_met === ""){
+						requirements_met = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId], true);
+					} else {
+						requirements_met = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId], true) && requirements_met;
+					}
+				});
+			}
+			if(!requirements_met){
+				return;
+			}
+			if(single_event.LimitedToArea !== null){
+				let limitedto = single_event.LimitedToArea.Id;
+				single_event.ChildBranches.forEach(branch => {
+					let requirements_met = "";
+					// if(branch.Name === "Entertain your crew's terrified speculations"){
+						branch.QualitiesRequired.forEach(quality => {			
+							const level = qualitiesPossessedList[quality.AssociatedQualityId];
+							if(requirements_met === ""){
+								requirements_met = checkIfQualityFulfilled(quality, level, true);
+								if(requirements_met){
+									if(debug_events) console.log("first required quality possessed");
+								} else {
+									if(debug_events) console.log("first required quality not possessed");
+									if(debug_events) console.log(quality);
+									if(debug_events) console.log(level);
+								}
+							} else {
+								requirements_met = checkIfQualityFulfilled(quality, level, true) && requirements_met;
+								if(requirements_met){
+									if(debug_events) console.log("further required quality possessed");
+								} else {
+									if(debug_events) console.log("further required quality not possessed");
+									if(debug_events) console.log("quality:");
+									if(debug_events) console.log(quality);
+									if(debug_events) console.log("level: " + level);
+								}
+							}
+						});
+						
+						
+						// check for linked events, that are actually assigned to limbo and wouldnt show up because of that
+						if(branch.DefaultEvent !== undefined && branch.DefaultEvent.LinkToEvent !== null){
+							const linkEvent = events[branch.DefaultEvent.LinkToEvent.Id];
+							// let the limbo task know if the requirements of its parent task are fulfilled
+							linkEvents[linkEvent.Id] = requirements_met;
+							
+						} 
+					//}
+				});
+			}
+		});
+
+
+		eventsjson.forEach( single_event => {
+
+			
+			if(single_event.Image === "papers5"){
+				// console.log(single_event);
+			}
+			if(single_event.Category === "QuesticleStep, Gold"){
+				// events that only happen on your ship
+				// console.log(single_event);
+			}
+
+			let requirements_met = "";
+			if( single_event.QualitiesRequired.length === 0){
+				// if there are no requirements, they are met
+				requirements_met = true;
+			} else {
+				single_event.QualitiesRequired.forEach(quality => {
+					if(requirements_met === ""){
+						requirements_met = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId], true);
+					} else {
+						requirements_met = checkIfQualityFulfilled(quality, qualitiesPossessedList[quality.AssociatedQualityId], true) && requirements_met;
+					}
+				});
+			}
+				
+			if(!requirements_met){
+				return;
+			}
+			if(single_event.LimitedToArea !== null){
+				
+				
+				let limitedto = single_event.LimitedToArea.Id;
+				single_event.ChildBranches.forEach(branch => {
+					// this is not the best way of determining port report qualities
+					// preferably, we would gather all qualities that have "port report" in their name
+					// then we would check events, to see whether they affect a port report quality
+					// if they do, we then know that the port report is linked to that port
+					if(branch.Name.includes("Port Report") 
+					|| branch.Name.includes("Gather intelligence")
+					|| branch.Name.includes("Chat to the port-folk")
+					|| branch.Name.includes("Gather gossip")
+					){
+						if(port_report_qualities[limitedto] === undefined){
+							port_report_qualities[limitedto] = [];
+						}
+						if(branch.SuccessEvent !== null){
+							port_report_qualities[limitedto].push(branch.SuccessEvent.QualitiesAffected[0].AssociatedQualityId);
+						} else {
+							port_report_qualities[limitedto].push(branch.DefaultEvent.QualitiesAffected[0].AssociatedQualityId);
+						}
+						// console.log({branch});
+					}
+					
+
+					
+					// check if the qualities required are met
+					let requirements_met = "";
+	
+						
+					branch.QualitiesRequired.forEach(quality => {			
+						const level = qualitiesPossessedList[quality.AssociatedQualityId];
+						if(requirements_met === ""){
+							requirements_met = checkIfQualityFulfilled(quality, level, true);
+							if(requirements_met){
+								if(debug_events) console.log("first required quality possessed");
+							} else {
+								if(debug_events) console.log("first required quality not possessed");
+								if(debug_events) console.log(quality);
+								if(debug_events) console.log(level);
+							}
+						} else {
+							requirements_met = checkIfQualityFulfilled(quality, level, true) && requirements_met;
+							if(requirements_met){
+								if(debug_events) console.log("further required quality possessed");
+							} else {
+								if(debug_events) console.log("further required quality not possessed");
+								if(debug_events) console.log("quality:");
+								if(debug_events) console.log(quality);
+								if(debug_events) console.log("level: " + level);
+							}
+						}
+					});
+
+					// return after port reports so we can ignore the quests, but save the port report quality
+					if(this.state.ignored_quests.includes(branch.Id)){
+						requirements_met = false;
+					}
+					
+					if(requirements_met){
+						// if we are on a limbo quest, we need to check if we've actually been sent here
+						// if we just redirect every quest to the parent location, we ignore the requirements of their parent quest
+						if( limitedto === 101956 && branch.DefaultEvent.LinkToEvent !== null){
+							const linkEvent = events[branch.DefaultEvent.LinkToEvent.Id];
+							const linkName = linkEvent.Name;
+							
+							if(linkEvent.LimitedToArea !== null && linkEvents[single_event.Id]){
+								limitedto = linkEvent.LimitedToArea.Id;
+							}
+						}
+						if(interactions[limitedto] === undefined){
+							interactions[limitedto] = [branch];
+						} else {
+							interactions[limitedto].push(branch);
+						}
+					} else {
+						const branchName = branch.Name;
+						if(debug_events) console.log("rejecting quest: ");
+						if(debug_events) console.log({ branchName  });
+					}
+				});
+			}
+		});
 		
 		// determine the tiles
 		const grid = [ [], [], [], [], [], [] ];
@@ -871,89 +884,6 @@ class App extends React.Component{
 		<ThemeProvider theme={theme} >
 		<div className="App">
 		<Grid container spacing={1}>
-			<Grid item xs={12}>
-				<Paper>
-					<Typography>{this.state.selectedPort}</Typography>
-					<select onChange={(e) => this.handleGoodChange(e)} >
-						{option_goods.map((good, index) =>{
-							return <option key={index} value={good.Id}>{good.Name}</option>
-						})}
-					</select>
-					<select onChange={(e) => this.handleGoodChange(e)} >
-						{option_curiosities.map((good, index) =>{
-							return <option key={index} value={good.Id}>{good.Name}</option>
-						})}
-					</select>
-					<select onChange={(e) => this.handleGoodChange(e)} >
-						{option_stories.map((good, index) =>{
-							return <option key={index} value={good.Id}>{good.Name}</option>
-						})}
-					</select>
-					<select onChange={(e) => this.handleGoodChange(e)} >
-						{option_circumstances.map((good, index) =>{
-							return <option key={index} value={good.Id}>{good.Name}</option>
-						})}
-					</select>
-					<TextField id="amount" label="Amount" onChange={(e) => this.handleAmountChange(e)} value={this.state.value} />
-					<Button onClick={() => this.handleQuestAdd() } variant="contained" color="primary">
-						Add Quest
-					</Button>
-				</Paper>
-			</Grid>
-			<Grid item xs={8}>
-				<div className={classes.masonry}>
-				{ports.map(port => {
-				if (this.state.quests[port.name] && this.state.quests[port.name].length > 0){
-					return(
-					<Paper className={classes.questcontainer}>
-					<Accordion defaultExpanded={true} >
-						<AccordionSummary>	
-							<div className={classes.porticoncontainer}>
-								{ port.icon && images[port.icon + "small"] &&
-								<img className={classes.porticon} src={images[port.icon + "small"].default} />
-								}
-							</div>
-							<div className={classes.portname}>{ port.name }</div>
-						</AccordionSummary>
-						<AccordionDetails>
-							<Grid container>
-							{ this.state.quests[port.name] && 
-								this.state.quests[port.name].map((quest, index) =>{
-									const good = goods[parseInt(quest.good)];
-									
-									return (
-									<div className={classes.questrow}>
-										<div className={classes.goodicon} ><img src={images[good.Image + "small"].default} /></div>
-										<div className={classes.goodname}><a target="_blank" className={classes.links} href={"https://sunlesssea.gamepedia.com/" + good.Name}>{ quest.amount} {good.Name}</a></div>
-										<div className={classes.deleteicon}><DeleteForeverIcon onClick={() => this.handleQuestRemove(port.name, index)} /></div>
-									</div>
-									)
-								})
-							}
-							</Grid>
-						</AccordionDetails>
-					</Accordion>
-					</Paper>
-					)
-				}
-				})}
-				</div>
-			</Grid>
-			<Grid item xs={4}>
-				<Grid container>
-					{ports.map(port => {
-						return(
-						<Grid onClick={() => this.handlePortSelect(port.name) }  item xs={2}>
-							<div></div>	
-							{ port.icon && images[port.icon + "small"] &&
-								<img src={images[port.icon + "small"].default} />
-							}
-							<div>{ port.name }</div>
-						</Grid>
-						)
-					})}
-				</Grid>
-			</Grid>
 			<div>Echoes: {echoes}</div>
 			<div>Commission: {commission}</div>
 			<div>SAY: {something_awaits_you}</div>
@@ -1006,7 +936,7 @@ class App extends React.Component{
 																<ul className={classes.list} >
 															{ interactions[data.Area.Id] && 
 																 interactions[data.Area.Id].map((quest) =>{
-																	return <QuestRow goods={goods} classes={classes} quest={quest} />
+																	return <QuestRow handleQuestRemove={this.handleQuestRemove} goods={goods} classes={classes} quest={quest} />
 																})
 															}																										
 																</ul>
@@ -1028,4 +958,4 @@ class App extends React.Component{
 	}
 }
 
-export default withStyles(styles)(App);
+export default withCookies(withStyles(styles)(App));
