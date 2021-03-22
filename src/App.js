@@ -22,6 +22,7 @@ import { createStyles, makeStyles } from '@material-ui/core/styles';
 import { withStyles } from '@material-ui/styles';
 import DeleteForeverIcon from '@material-ui/icons/DeleteForever';
 import clsx from 'clsx';
+import Tooltip from '@material-ui/core/Tooltip';
 
 const context = require.context('../icons', true, /.png$/);
 const images = {};
@@ -267,7 +268,35 @@ eventsjson.forEach( single_event => {
 	}
 });
 
-
+function sort_quests(quests){
+	const sorted_quests = { locked: [], unlocked:[]};
+	// types we want to catch: SAY, Repeatable (?), Locked, Unlocked
+	if(quests !== undefined){
+		quests.forEach(quest => {
+			let requirements_met = "";
+			if(quest.QualitiesRequired.length === 0){
+				requirements_met = true;
+			}
+			quest.QualitiesRequired.map(quality => { 
+				if( goods[quality.AssociatedQualityId] !== undefined){
+					const associatedQualityId = quality.AssociatedQualityId;
+					const level = qualitiesPossessedList[associatedQualityId] !== undefined ? qualitiesPossessedList[associatedQualityId] : 0;
+					if(requirements_met === ""){
+						requirements_met = checkIfQualityFulfilled(quality,level,false);
+					} else {
+						requirements_met = checkIfQualityFulfilled(quality,level,false) && requirements_met;
+					}
+				}
+			});
+			if(requirements_met){
+				sorted_quests.unlocked.push(quest);
+			} else {
+				sorted_quests.locked.push(quest);
+			}
+		});
+	}
+	return sorted_quests;
+}
 
 const ShadowyWorkinKhansHeart = qualitiesPossessedList[146643];
 // console.log({ ShadowyWorkinKhansHeart });
@@ -476,7 +505,6 @@ const styles = theme => ({
 	},
 	questcounter:{
 		fontWeight: "bold",
-		color: "red"
 	},
 	notPossessed:{
 		opacity: 0.6,
@@ -491,12 +519,38 @@ const styles = theme => ({
 	},
 	questicons:{
 		textAlign: "end"
+	},
+	locked:{
+		color: "red",
+	},
+	unlocked: {
+		color: "green"
 	}
 });
 
 
 
-
+const QuestCounter = (props) => {
+	const {interactions, classes} = props;
+	const sorted_quests = sort_quests(interactions);
+	if(sorted_quests){
+			return (
+			<div className={classes.questcounter}>
+				<span className={classes.unlocked}>
+					{sorted_quests.unlocked.length}
+				</span>
+				/
+				<span className={classes.locked}>
+					{sorted_quests.locked.length}
+				</span>
+				&nbsp;
+			</div>
+			
+			)										
+	} else {
+		return (<div></div>)
+	}
+}
 
 const QuestRow = (props) => {
 	const {classes, quest} = props;
@@ -504,14 +558,31 @@ const QuestRow = (props) => {
 	quest.QualitiesRequired.map(quality => { 
 		if( goods[quality.AssociatedQualityId] !== undefined){
 			const associatedQualityId = quality.AssociatedQualityId;
-			/* console.log(goods[associatedQualityId].Name);
-			console.log(qualitiesPossessedList[associatedQualityId]);
-			console.log(quality);
-			console.log(checkIfQualityFulfilled(quality, qualitiesPossessedList[associatedQualityId])); */
+			const level = qualitiesPossessedList[associatedQualityId] !== undefined ? qualitiesPossessedList[associatedQualityId] : 0;
+			const qualityDetails = goods[associatedQualityId];
+			let amountNeeded;
+			if(quality.MinLevel !== null){
+				if(quality.MaxLevel !== null){
+					amountNeeded = "more than " + quality.MinLevel + " and less than " + quality.MaxLevel;
+				} else {
+					amountNeeded = quality.MinLevel;
+				}
+			} else if(quality.MaxLevel !== null){
+				if(quality.MaxLevel === 0){
+					amountNeeded = "no ";
+				} else {
+					amountNeeded = "no more than " + quality.MaxLevel;
+				}
+			} else {
+				amountNeeded = "any? ";
+			}
 			requirements.push(
 				{
-					"src": images[goods[associatedQualityId].Image + "small"].default,
-					"notPossessed" : ! checkIfQualityFulfilled(quality, qualitiesPossessedList[associatedQualityId], false)
+					"src": images[qualityDetails.Image + "small"].default,
+					"notPossessed" : ! checkIfQualityFulfilled(quality, level, false),
+					amountNeeded: amountNeeded,
+					amountPossessed: level,
+					quality: qualityDetails.Name
 				}
 			);
 		}
@@ -522,7 +593,8 @@ const QuestRow = (props) => {
 		<div className={classes.questtitle}>{ quest.Name }</div>
 		<div className={classes.questdescription}>{quest.Description}</div>
 		<div className={classes.questicons}>{ requirements.map(req => {
-				return <img className={clsx(classes.required, { [classes.notPossessed]: req.notPossessed })} src={req.src} />
+				const unlock = req.amountNeeded + " " + req.quality + " (you have " + req.amountPossessed + ")";
+				return <Tooltip title={"Unlocked with " + unlock}><img className={clsx(classes.required, { [classes.notPossessed]: req.notPossessed })} src={req.src} /></Tooltip>
 			}) 
 		}
 		</div>
@@ -538,10 +610,10 @@ const QuestRow = (props) => {
 		});
 		}	*/
 
-class App extends React.Component <State> {
+class App extends React.Component{
 
 
-	constructor(props: any) {
+	constructor(props) {
 		super(props);
 		this.state = { selectedPort: "none", amount: 0, quests: quests , selectedGood: 110135 };
 	}	
@@ -901,9 +973,9 @@ class App extends React.Component <State> {
 																<img className={classes.porticon} src={images[data.Icon + "small"].default} />
 																}
 															</div>
-															<div className={classes.portname}>{interactions[data.Area.Id] && 
-																<div className={classes.questcounter}>{interactions[data.Area.Id].length} Quests</div>
-															}{ data.Name } {data.Area.Id}   
+															<div className={classes.portname}>
+															<QuestCounter classes={classes} interactions={interactions[data.Area.Id]} />
+															{ data.Name } {data.Area.Id}   
 															</div>
 															<div className={classes.infoIcons}>
 																{ data.exchange && data.exchange.fuel &&
